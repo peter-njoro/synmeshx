@@ -6,7 +6,7 @@ services:
     container_name: synmeshx_backend
     working_dir: /app
     command: >
-      sh -c "uv sync && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "uv sync && alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./backend:/app
     ports:
