@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  backend:
+    image: ghcr.io/astral-sh/uv:latest
+    container_name: synmeshx_backend
+    working_dir: /app
+    command: >
+      sh -c "uv sync && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    image: node:20-alpine
+    container_name: synmeshx_frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    volumes: 
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+
+  db:
+    image: postgres:16
+    container_name: synmeshx_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=synmeshx
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: synmeshx_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

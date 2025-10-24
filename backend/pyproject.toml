@@ -1,0 +1,21 @@
+[project]
+name = "synmeshx"
+version = "0.1.0"
+description = "Backend API for SynMeshX"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy",
+    "alembic",
+    "psycopg2-binary",
+    "redis",
+    "pydantic[email]",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "httpx",
+    "langchain",
+    "pgvector",
+]
+
+[tool.uv]
+dev-dependencies = ["pytest", "httpx"]
