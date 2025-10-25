@@ -210,3 +210,7 @@ __marimo__/
 node_modules/
 
 backend/uv.lock
+.next/
+*.gz
+
+frontend/.next
