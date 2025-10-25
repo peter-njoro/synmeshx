@@ -33,7 +33,7 @@ services:
 
 
   db:
-    image: postgres:18
+    image: postgres:16
     container_name: synmeshx_db
     env_file:
       - .env
