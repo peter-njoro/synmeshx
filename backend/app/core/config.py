@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Optional general settings
     debug: bool = Field(False, env="DEBUG")
-    project_name: str = Field("My Project", env="PROJECT_NAME")
+    project_name: str = Field("SynmeshX", env="PROJECT_NAME")
     api_v1_str: str = Field("/api/v1", env="API_V1_STR")
 
     # Derived property
