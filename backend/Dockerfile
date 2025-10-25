@@ -11,6 +11,8 @@ COPY ./pyproject.toml /uv.lock* ./
 COPY . .
 RUN uv sync --frozen
 
+ENV PATH="/app/.venv/bin:$PATH"
+
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
