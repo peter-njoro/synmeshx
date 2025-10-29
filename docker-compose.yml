@@ -2,11 +2,9 @@ version: "3.9"
 
 services:
   backend:
-    image: ghcr.io/astral-sh/uv:latest
+    build:
+      context: ./backend
     container_name: synmeshx_backend
-    working_dir: /app
-    command: >
-      sh -c "uv sync && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./backend:/app
     ports:
@@ -14,38 +12,51 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
 
   frontend:
-    image: node:20-alpine
+    build:
+      context: ./frontend
     container_name: synmeshx_frontend
     working_dir: /app
-    command: sh -c "npm install && npm run dev"
-    volumes: 
+    volumes:
       - ./frontend:/app
+      - /app/node_modules
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://synmeshx_backend:8000
+
 
   db:
     image: postgres:16
     container_name: synmeshx_db
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=synmeshx
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   redis:
     image: redis:7
     container_name: synmeshx_redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:
