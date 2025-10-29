@@ -12,6 +12,7 @@ dependencies = [
     "alembic",
     "psycopg2-binary",
     "redis",
+    "redis [async]",
     "pydantic[email]",
     "pydantic-settings",
     "python-jose[cryptography]",

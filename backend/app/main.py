@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .core.config import settings
-from .api.routes import auth, projects, sync
+from app.core.config import settings
+from app.core.redis import lifespan
+from app.core.database import get_db
+from app.core.mesh_manager import MeshManager
+from api.routes import auth, projects, sync
 
-app = FastAPI(title=settings.project_name, debug=settings.debug)    
+app = FastAPI(title=settings.project_name, debug=settings.debug, lifespan=lifespan)    
 
 origins = ["*"]
 app.add_middleware(
@@ -23,3 +26,10 @@ app.include_router(auth.router, prefix=settings.api_v1_str + "/auth", tags=["Aut
 @app.get("/")
 def root():
     return {"message": f"Welcome to {settings.project_name} API"}
+
+@app.on_event("startup")
+def on_startup():
+    db = next(get_db())
+    manager = MeshManager(db)
+    manager.generate_mesh_manifest()
+    print("mesh.json generated on startup.")
