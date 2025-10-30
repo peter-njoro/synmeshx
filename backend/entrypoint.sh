@@ -7,8 +7,7 @@ while ! nc -z "$POSTGRES_HOST" "$POSTGRES_PORT"; do
   sleep 1
 done
 
-# Activate uv virtual environment
-source .venv/bin/activate
+
 
 # Run migrations
 alembic upgrade head
