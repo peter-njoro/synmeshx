@@ -7,19 +7,9 @@ while ! nc -z "$POSTGRES_HOST" "$POSTGRES_PORT"; do
   sleep 1
 done
 
-# Activate uv virtual environment if present
-if [ -f ".venv/bin/activate" ]; then
-  # shellcheck source=/dev/null
-  . .venv/bin/activate
-fi
+# Run Alembic migrations
+cd /app || exit 1
+python -c "from alembic import command; from alembic.config import Config; command.upgrade(Config('alembic.ini'), 'head')"
 
-# Run migrations: prefer venv's Python to avoid running a script with a broken shebang
-if [ -x ".venv/bin/python" ]; then
-  .venv/bin/python -m alembic upgrade head
-else
-  # fallback to whatever python is available in PATH
-  python -m alembic upgrade head
-fi
-
-# Start app
+# Start the app
 uvicorn app.main:app --host 0.0.0.0 --port 8000
