@@ -258,34 +258,6 @@ npm install
 npm run dev
 ```
 
-### Configuration
-
-Create a `.env` file in the project root with the following variables:
-
-```env
-# Database
-POSTGRES_USER=synmeshx
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=synmeshx
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_DB=0
-
-# Security
-SECRET_KEY=your-super-secret-key-change-this-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# Application
-DEBUG=False
-PROJECT_NAME=SynMeshX
-API_V1_STR=/api/v1
-```
-
 ### Running the Application
 
 **With Docker Compose**:
