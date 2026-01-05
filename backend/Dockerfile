@@ -1,21 +1,36 @@
+# ===============================
+# SynMeshX Backend - Pip version
+# ===============================
+
 FROM python:3.12-slim
 
-ENV PATH="/root/.local/bin:$PATH"
+# Prevent Python from buffering logs or writing .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y curl netcat-openbsd && rm -rf /var/lib/apt/lists/*
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    netcat-openbsd \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY ./pyproject.toml /uv.lock* ./
+# Set workdir
+WORKDIR /app
+
+# Copy dependency definitions first for caching
+COPY requirements.txt .
+
+# Install dependencies using pip
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -r requirements.txt
+
+# Copy the rest of the project
 COPY . .
-RUN uv sync --frozen
 
-ENV PATH="/app/.venv/bin:$PATH"
-
-COPY entrypoint.sh .
+# Make entrypoint executable
 RUN chmod +x entrypoint.sh
 
-WORKDIR /app
 EXPOSE 8000
+
 ENTRYPOINT ["bash", "./entrypoint.sh"]
