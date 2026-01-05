@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Backend for SynmeshX"
 requires-python = ">=3.11"
 readme = "README.md"
-license = { text = "Proprietary" }  # since this isn't open-source
+license = { text = "Proprietary" }
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
@@ -12,6 +12,7 @@ dependencies = [
     "alembic",
     "psycopg2-binary",
     "redis",
+    "redis[async]",
     "pydantic[email]",
     "pydantic-settings",
     "python-jose[cryptography]",
@@ -23,10 +24,6 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest", "httpx"]
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["app"]
