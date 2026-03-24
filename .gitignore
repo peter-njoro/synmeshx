@@ -214,3 +214,4 @@ backend/uv.lock
 *.gz
 
 frontend/.next
+.kiro
