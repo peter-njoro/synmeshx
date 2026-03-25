@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "contexa"
+version = "0.1.0"
+description = "A local-first context engine for AI agents and tools"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13.0",
+    "typer>=0.12.0",
+    "cryptography>=42.0.0",
+    "structlog>=24.1.0",
+    "pydantic>=2.7.0",
+    "httpx>=0.27.0",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+embeddings = ["sentence-transformers>=3.0.0"]
+
+[project.scripts]
+contexa = "contexa.cli.main:app"
+contexad = "contexa.daemon:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "hypothesis>=6.100.0",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
