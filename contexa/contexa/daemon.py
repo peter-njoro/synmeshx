@@ -41,6 +41,7 @@ from contexa.store.trust_store import TrustStore
 from contexa.store.embedding_store import EmbeddingStore
 from contexa.sync.engine import SyncEngine, SyncMode
 from contexa.api.app import create_app
+from contexa.logging import install_global_exception_handler
 
 
 def _configure_logging(log_level: str, log_output: str) -> None:
@@ -61,13 +62,19 @@ def _configure_logging(log_level: str, log_output: str) -> None:
         handler = logging.FileHandler(log_output)
 
     handler.setLevel(level)
-    logging.basicConfig(handlers=[handler], level=level)
+
+    # Force root logger level (basicConfig is a no-op if already configured)
+    root = logging.getLogger()
+    root.setLevel(level)
+    # Remove existing handlers and add the new one
+    root.handlers.clear()
+    root.addHandler(handler)
 
     structlog.configure(
         processors=processors,
         wrapper_class=structlog.make_filtering_bound_logger(level),
         logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=True,
+        cache_logger_on_first_use=False,
     )
 
 
@@ -93,6 +100,7 @@ def main(config_path: Path | None = None) -> None:
     # Step 2: Initialize logging
     # ------------------------------------------------------------------
     _configure_logging(cfg.daemon.log_level, cfg.daemon.log_output)
+    install_global_exception_handler()
     log = structlog.get_logger("contexad")
     log.info("Contexa daemon starting", version="0.1.0")
 
