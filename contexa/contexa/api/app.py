@@ -15,7 +15,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
-from contexa.api.routes import contexts, health, trust
+from contexa.api.routes import contexts, health, trust, sync as sync_routes
 from contexa.store.context_store import NotFoundError, ChecksumError
 
 
@@ -104,5 +104,6 @@ def create_app() -> FastAPI:
     app.include_router(contexts.router, tags=["contexts"])
     app.include_router(health.router, tags=["health"])
     app.include_router(trust.router, tags=["trust"])
+    app.include_router(sync_routes.router, tags=["sync"])
 
     return app
