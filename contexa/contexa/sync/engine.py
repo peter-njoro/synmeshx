@@ -9,7 +9,8 @@ Key behaviours:
   - Retries failed syncs with exponential backoff
   - Detects conflicts via parent-chain ancestry check
   - Records every operation in sync_log
-  - Prefers direct TCP sync; relay support added in task 12
+  - Three sync modes: local-only (direct), self-hosted relay, hosted relay
+  - Prefers direct sync when available; falls back to relay
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -53,6 +55,18 @@ from contexa.sync.protocol import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Sync modes
+# ---------------------------------------------------------------------------
+
+class SyncMode(str, Enum):
+    LOCAL_ONLY = "local-only"
+    SELF_HOSTED = "self-hosted"
+    HOSTED = "hosted"
+
+HOSTED_RELAY_URL = "wss://relay.contexa.dev"
 
 
 # ---------------------------------------------------------------------------
@@ -126,6 +140,8 @@ class SyncEngine:
         identity: DeviceIdentity,
         max_retries: int = 5,
         backoff_base: float = 2.0,
+        sync_mode: SyncMode = SyncMode.HOSTED,
+        relay_endpoint: str = "",
     ) -> None:
         self._session = session
         self._context_store = context_store
@@ -133,9 +149,37 @@ class SyncEngine:
         self._identity = identity
         self._max_retries = max_retries
         self._backoff_base = backoff_base
+        self._sync_mode = sync_mode
+        self._relay_endpoint = relay_endpoint or HOSTED_RELAY_URL
         self._pending: list[PendingOperation] = []
+        self._relay_available: bool = True   # optimistic; set False on failure
         self.syncs_completed: int = 0
         self.sync_failures: int = 0
+
+    # ------------------------------------------------------------------
+    # Relay configuration
+    # ------------------------------------------------------------------
+
+    def get_relay_url(self) -> str | None:
+        """Return the relay URL based on sync mode, or None for local-only."""
+        if self._sync_mode == SyncMode.LOCAL_ONLY:
+            return None
+        if self._sync_mode == SyncMode.SELF_HOSTED:
+            return self._relay_endpoint
+        return HOSTED_RELAY_URL
+
+    def is_relay_mode(self) -> bool:
+        """Return True if relay routing is configured."""
+        return self._sync_mode != SyncMode.LOCAL_ONLY
+
+    def mark_relay_unavailable(self) -> None:
+        """Mark the relay as unreachable — operations will be queued."""
+        self._relay_available = False
+        logger.warning("Relay marked as unavailable — sync operations will be queued")
+
+    def mark_relay_available(self) -> None:
+        """Mark the relay as reachable again."""
+        self._relay_available = True
 
     # ------------------------------------------------------------------
     # Public interface

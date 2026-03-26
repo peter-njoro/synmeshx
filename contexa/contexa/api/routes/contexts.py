@@ -13,7 +13,9 @@ Endpoints:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 
 from contexa.api.schemas import (
@@ -24,6 +26,7 @@ from contexa.api.schemas import (
     LabelUpdateRequest,
 )
 from contexa.store.context_store import ContextStore, NotFoundError, ChecksumError
+from contexa.store.embedding_store import EmbeddingDisabledError
 
 router = APIRouter()
 
@@ -31,6 +34,11 @@ router = APIRouter()
 def _get_store(request: Request) -> ContextStore:
     """Dependency: retrieve the ContextStore from app state."""
     return request.app.state.context_store
+
+
+def _get_embedding_store(request: Request):
+    """Dependency: retrieve the EmbeddingStore from app state (may be None)."""
+    return getattr(request.app.state, "embedding_store", None)
 
 
 def _version_to_response(v) -> ContextVersionResponse:
@@ -72,6 +80,42 @@ def create_context(
 def list_contexts(store: ContextStore = Depends(_get_store)):
     """List all contexts with their latest version summary."""
     return [_summary_to_response(s) for s in store.list_all()]
+
+
+# NOTE: /contexts/search MUST be registered before /contexts/{context_id}
+# to prevent FastAPI matching "search" as a context_id path parameter.
+@router.get("/contexts/search", response_model=list[ContextVersionResponse])
+def search_contexts(
+    request: Request,
+    q: str = Query(..., description="Natural language search query"),
+    top_n: int = Query(10, ge=1, le=100),
+    store: ContextStore = Depends(_get_store),
+):
+    """Semantic similarity search over context objects."""
+    embedding_store = _get_embedding_store(request)
+    if embedding_store is None or not embedding_store.enabled:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "embedding_disabled",
+                     "detail": "No embedding model configured. Set [embeddings] model in config.toml."},
+        )
+
+    try:
+        results = embedding_store.search(q, top_n=top_n)
+    except EmbeddingDisabledError:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "embedding_disabled"},
+        )
+
+    versions = []
+    for context_id, version_tag, _score in results:
+        try:
+            v = store.get(context_id, version_tag=version_tag)
+            versions.append(_version_to_response(v))
+        except Exception:
+            continue
+    return versions
 
 
 @router.get("/contexts/{context_id}", response_model=ContextVersionResponse)
