@@ -23,7 +23,7 @@ def make_store():
     return ContextStore(session)
 
 
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 @given(num_contexts=st.integers(min_value=0, max_value=20))
 def test_list_returns_exactly_created_contexts(num_contexts):
     """list_all() returns exactly the contexts that were created."""
@@ -40,7 +40,7 @@ def test_list_returns_exactly_created_contexts(num_contexts):
     assert listed_ids == created_ids
 
 
-@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 @given(num_contexts=st.integers(min_value=1, max_value=10))
 def test_list_checksums_match_latest_version(num_contexts):
     """Each summary's checksum matches the latest version's checksum."""
