@@ -40,14 +40,20 @@ Licensed under the [Apache License 2.0](./LICENSE).
 
 ---
 
-## Installation
+## Setup
 
-### Install the Contexa daemon and CLI
+To set up the development environment:
 
-```bash
-cd contexa
-uv sync
-```
+1. Ensure you have `uv` installed (https://github.com/astral-sh/uv).
+2. Install dependencies and create the virtual environment:
+   ```bash
+   cd contexa
+   uv sync
+   ```
+3. Activate the virtual environment:
+   ```bash
+   source .venv/bin/activate.fish  # or activate (for bash/zsh)
+   ```
 
 This installs two executables into the virtual environment:
 
