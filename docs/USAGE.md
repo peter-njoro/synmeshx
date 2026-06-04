@@ -1,7 +1,12 @@
 # Contexa — Usage Guide
 
-A practical reference for running Contexa and every command, endpoint, and SDK
-method it exposes. For how it works internally, see [DESIGN.md](./DESIGN.md).
+A practical reference for running Contexa and every endpoint, SDK method, and
+command it exposes. For how it works internally, see [DESIGN.md](./DESIGN.md).
+
+Contexa is built to be driven by **AI agents** (and the automation around them),
+so this guide leads with the interfaces they use — the **HTTP API** (§3) and the
+**Python SDK** (§4). The **CLI** (§5) is the human escape hatch for setup,
+inspection, and debugging; it's a thin client over the same HTTP API.
 
 ---
 
@@ -69,112 +74,19 @@ the resolved config any time with `contexa config show`.
 
 ---
 
-## 3. CLI reference
+## 3. HTTP API reference
 
-All CLI commands talk to the daemon over the local HTTP API. **If the daemon
-isn't running, the command prints an error and exits non-zero.** Most read
-commands accept `--json` for machine-readable output.
-
-```
-contexa
-├── daemon    start | stop | status
-├── context   create | get | list | label | delete
-├── trust      list | add | remove
-├── sync       trigger | log
-└── config     show
-```
-
-### 3.1 `contexa daemon`
-
-| Command | What it does |
-|---------|--------------|
-| `contexa daemon start`  | Launch the daemon detached; write its PID to `~/.local/share/contexa/daemon.pid`. |
-| `contexa daemon stop`   | Send `SIGTERM` to the running daemon for a graceful shutdown. |
-| `contexa daemon status` | Report whether the daemon is alive and show its `/health`. |
-
-### 3.2 `contexa context`
+**This is the primary interface.** Agents and tools talk to the daemon over
+plain HTTP on `http://127.0.0.1:7474` from any language. Contexts are versioned
+and checksummed, every error comes back in a stable envelope, and interactive
+docs are served at `/docs`.
 
 ```bash
-# Create a context from an inline JSON string or a file
-contexa context create --json '{"task": "refactor auth", "status": "wip"}' --label auth-refactor
-contexa context create --file ./payload.json --label imported
-
-# Read it back (latest version, or a specific one)
-contexa context get <context_id>
-contexa context get <context_id> --version <version_tag>
-
-# List all contexts (summaries: latest version, checksum, label)
-contexa context list
-
-# Change or clear the human label (does NOT create a new version)
-contexa context label <context_id> "new label"
-contexa context label <context_id>            # omit text to clear
-
-# Delete a context and all its versions
-contexa context delete <context_id>
-contexa context delete <context_id> --yes     # skip the confirmation
+# Create a context
+curl -s http://127.0.0.1:7474/contexts \
+  -H 'content-type: application/json' \
+  -d '{"content": {"task": "refactor auth", "status": "wip"}, "label": "auth-refactor"}'
 ```
-
-| Option | Applies to | Meaning |
-|--------|------------|---------|
-| `--json TEXT` | create | Content as an inline JSON string. |
-| `--file PATH` | create | Content read from a JSON file. |
-| `--label TEXT` | create | Optional human-readable label. |
-| `--version TAG` | get | Fetch a specific version instead of the latest. |
-| `--yes` / `-y` | delete | Skip the confirmation prompt. |
-| `--json` | get/list/create | Emit raw JSON instead of the human format. |
-
-> **Updating content:** there is no `context update` CLI verb — content updates
-> go through the SDK/API (`PUT /contexts/{id}`). The CLI manages labels and
-> lifecycle; the SDK manages content versions.
-
-### 3.3 `contexa trust`
-
-```bash
-# List trusted devices (non-revoked)
-contexa trust list
-
-# Trust a device. PUBLIC_KEY_FILE holds the peer's hex-encoded public key.
-contexa trust add <device_id> <public_key_file> --label "laptop"
-
-# Revoke trust (soft-delete; preserves audit history)
-contexa trust remove <device_id>
-contexa trust remove <device_id> --yes
-```
-
-### 3.4 `contexa sync`
-
-```bash
-# Queue a manual sync run (returns immediately; runs async in the daemon)
-contexa sync trigger
-
-# Inspect the sync audit log, with optional filters
-contexa sync log
-contexa sync log --status conflict
-contexa sync log --device <device_id> --context <context_id>
-contexa sync log --since 2026-06-01T00:00:00Z --json
-```
-
-| Option | Meaning |
-|--------|---------|
-| `--device TEXT`  | Filter by device id. |
-| `--context TEXT` | Filter by context id. |
-| `--status TEXT`  | Filter by status: `success`, `conflict`, `failed`, `pending`. |
-| `--since TEXT`   | Only entries after the given ISO-8601 timestamp. |
-| `--json`         | Raw JSON output. |
-
-### 3.5 `contexa config`
-
-```bash
-contexa config show          # human-readable resolved config (defaults included)
-contexa config show --json   # same, as JSON
-```
-
----
-
-## 4. HTTP API reference
-
-Base URL: `http://127.0.0.1:7474`. Interactive docs at `/docs`.
 
 ### Contexts
 
@@ -222,7 +134,10 @@ content, checksum, created_at, label`.
 
 ---
 
-## 5. Python SDK
+## 4. Python SDK
+
+The ergonomic wrapper over the HTTP API — the recommended way for Python agents
+and scripts to use Contexa.
 
 ```python
 from contexa.sdk import (
@@ -270,6 +185,111 @@ client.get_config()
 
 **Exceptions:** `ContexaError` (base), `ContexaConnectionError` (daemon
 unreachable), `ContexaNotFoundError` (404), `ContexaValidationError` (400/422).
+
+---
+
+## 5. CLI reference (human escape hatch)
+
+The `contexa` CLI is for the operator, not the agent — a thin client over the
+same HTTP API (§3), meant for first-time setup, inspection, and debugging.
+Agents should drive Contexa through the API/SDK above rather than shelling out.
+**If the daemon isn't running, every command prints an error and exits
+non-zero.** Most read commands accept `--json` for machine-readable output.
+
+```
+contexa
+├── daemon    start | stop | status
+├── context   create | get | list | label | delete
+├── trust      list | add | remove
+├── sync       trigger | log
+└── config     show
+```
+
+### 5.1 `contexa daemon`
+
+| Command | What it does |
+|---------|--------------|
+| `contexa daemon start`  | Launch the daemon detached; write its PID to `~/.local/share/contexa/daemon.pid`. |
+| `contexa daemon stop`   | Send `SIGTERM` to the running daemon for a graceful shutdown. |
+| `contexa daemon status` | Report whether the daemon is alive and show its `/health`. |
+
+### 5.2 `contexa context`
+
+```bash
+# Create a context from an inline JSON string or a file
+contexa context create --json '{"task": "refactor auth", "status": "wip"}' --label auth-refactor
+contexa context create --file ./payload.json --label imported
+
+# Read it back (latest version, or a specific one)
+contexa context get <context_id>
+contexa context get <context_id> --version <version_tag>
+
+# List all contexts (summaries: latest version, checksum, label)
+contexa context list
+
+# Change or clear the human label (does NOT create a new version)
+contexa context label <context_id> "new label"
+contexa context label <context_id>            # omit text to clear
+
+# Delete a context and all its versions
+contexa context delete <context_id>
+contexa context delete <context_id> --yes     # skip the confirmation
+```
+
+| Option | Applies to | Meaning |
+|--------|------------|---------|
+| `--json TEXT` | create | Content as an inline JSON string. |
+| `--file PATH` | create | Content read from a JSON file. |
+| `--label TEXT` | create | Optional human-readable label. |
+| `--version TAG` | get | Fetch a specific version instead of the latest. |
+| `--yes` / `-y` | delete | Skip the confirmation prompt. |
+| `--json` | get/list/create | Emit raw JSON instead of the human format. |
+
+> **Updating content:** there is no `context update` CLI verb — content updates
+> go through the SDK/API (`PUT /contexts/{id}`). The CLI manages labels and
+> lifecycle; the SDK manages content versions.
+
+### 5.3 `contexa trust`
+
+```bash
+# List trusted devices (non-revoked)
+contexa trust list
+
+# Trust a device. PUBLIC_KEY_FILE holds the peer's hex-encoded public key.
+contexa trust add <device_id> <public_key_file> --label "laptop"
+
+# Revoke trust (soft-delete; preserves audit history)
+contexa trust remove <device_id>
+contexa trust remove <device_id> --yes
+```
+
+### 5.4 `contexa sync`
+
+```bash
+# Queue a manual sync run (returns immediately; runs async in the daemon)
+contexa sync trigger
+
+# Inspect the sync audit log, with optional filters
+contexa sync log
+contexa sync log --status conflict
+contexa sync log --device <device_id> --context <context_id>
+contexa sync log --since 2026-06-01T00:00:00Z --json
+```
+
+| Option | Meaning |
+|--------|---------|
+| `--device TEXT`  | Filter by device id. |
+| `--context TEXT` | Filter by context id. |
+| `--status TEXT`  | Filter by status: `success`, `conflict`, `failed`, `pending`. |
+| `--since TEXT`   | Only entries after the given ISO-8601 timestamp. |
+| `--json`         | Raw JSON output. |
+
+### 5.5 `contexa config`
+
+```bash
+contexa config show          # human-readable resolved config (defaults included)
+contexa config show --json   # same, as JSON
+```
 
 ---
 

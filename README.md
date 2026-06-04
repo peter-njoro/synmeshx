@@ -1,8 +1,8 @@
 # Contexa
 
-Contexa is a local-first context engine that runs as a background daemon on your devices. It lets you store, version, and synchronize structured JSON context across machines — with no cloud dependency, no central server, and no web UI required.
+Contexa is a local-first context engine for AI agents. It runs as a background daemon and gives agents — and the automation and developer tools around them — a durable, versioned place to store and share structured JSON state across machines, with no cloud dependency, no central server, and no web UI.
 
-It is designed as the persistence and sync layer for AI agents, developer tools, and automation scripts that need shared, durable state.
+**Agents are the primary consumer.** The interface that matters is the local HTTP API (and the typed Python SDK over it): an agent reads and writes contexts at `127.0.0.1:7474` as its persistence and sync layer. The `contexa` CLI exists for the human in the loop — initial setup, inspection, and debugging — not as the main way the system is driven.
 
 Licensed under the [Apache License 2.0](./LICENSE).
 
@@ -12,12 +12,12 @@ Licensed under the [Apache License 2.0](./LICENSE).
 
 - Runs a daemon (`contexad`) on each of your devices
 - Stores versioned, checksummed JSON documents (called *contexts*) in a local SQLite database
-- Exposes a local HTTP API on `127.0.0.1:7474` for programmatic access
-- Provides a CLI (`contexa`) for managing contexts, devices, and sync from the terminal
-- Ships a typed Python SDK (`pip install contexa`) for use in agents and scripts
+- **Exposes a local HTTP API on `127.0.0.1:7474`** — the primary interface agents and tools talk to
+- **Ships a typed Python SDK (`pip install contexa`)** — the ergonomic wrapper over that API for agents and scripts
+- Optionally generates vector embeddings for semantic search over stored contexts
 - Syncs contexts between your trusted devices — directly over LAN or through an optional relay server
 - Encrypts all sync payloads end-to-end using device key pairs; the relay never sees plaintext
-- Optionally generates vector embeddings for semantic search over stored contexts
+- Provides a CLI (`contexa`) for humans to set up, inspect, and debug from the terminal
 
 ---
 
@@ -150,37 +150,12 @@ contexa config show
 
 ---
 
-## CLI quick reference
+## Programmatic access (the primary interface)
 
-```bash
-# Daemon
-contexa daemon start
-contexa daemon stop
-contexa daemon status
+This is how agents and tools are expected to use Contexa: talk to the daemon's
+local HTTP API, either directly or through the typed Python SDK.
 
-# Contexts
-contexa context create --json '{"key": "value"}' --label my-context
-contexa context list
-contexa context get <context_id>
-contexa context label <context_id> "new label"
-contexa context delete <context_id>
-
-# Trusted devices
-contexa trust list
-contexa trust add <device_id> <public_key_file>
-contexa trust remove <device_id>
-
-# Sync
-contexa sync trigger
-contexa sync log --status conflict
-
-# Config
-contexa config show
-```
-
----
-
-## Python SDK
+### Python SDK
 
 ```python
 from contexa.sdk import ContexaClient
@@ -208,6 +183,53 @@ log = client.get_sync_log(status="conflict")
 ```
 
 `ContexaConnectionError` is raised if the daemon is not running.
+
+### HTTP API
+
+Any language can use Contexa over plain HTTP on `http://127.0.0.1:7474`. Contexts
+are versioned and checksummed, errors come back in a stable envelope
+(`{error, detail}`), and interactive docs are served at `/docs`. See
+[USAGE.md](./docs/USAGE.md) for the full endpoint reference.
+
+```bash
+curl -s http://127.0.0.1:7474/contexts \
+  -H 'content-type: application/json' \
+  -d '{"content": {"task": "refactor auth", "status": "wip"}, "label": "auth-refactor"}'
+```
+
+---
+
+## CLI (the human escape hatch)
+
+The `contexa` CLI is for the operator, not the agent — it's a thin client over
+the same HTTP API, meant for first-time setup, inspection, and debugging. Agents
+should use the SDK/API above rather than shelling out to the CLI.
+
+```bash
+# Daemon
+contexa daemon start
+contexa daemon stop
+contexa daemon status
+
+# Contexts (inspection / lifecycle; content updates go through the SDK/API)
+contexa context create --json '{"key": "value"}' --label my-context
+contexa context list
+contexa context get <context_id>
+contexa context label <context_id> "new label"
+contexa context delete <context_id>
+
+# Trusted devices
+contexa trust list
+contexa trust add <device_id> <public_key_file>
+contexa trust remove <device_id>
+
+# Sync
+contexa sync trigger
+contexa sync log --status conflict
+
+# Config
+contexa config show
+```
 
 ---
 

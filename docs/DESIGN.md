@@ -10,15 +10,24 @@ It is descriptive (how the system works today), not aspirational.
 
 ## 1. What Contexa is
 
-Contexa is a **local-first context engine**. It runs as a background daemon
-(`contexad`) on each of your devices and stores versioned, checksummed JSON
-documents — called **contexts** — in a local SQLite database. It exposes a
-local-only HTTP API for programmatic access, ships a CLI and a Python SDK,
-and synchronizes contexts between your **trusted devices** with end-to-end
-encryption.
+Contexa is a **local-first context engine for AI agents**. It runs as a
+background daemon (`contexad`) on each of your devices and stores versioned,
+checksummed JSON documents — called **contexts** — in a local SQLite database.
+It exposes a local-only HTTP API for programmatic access (with a Python SDK
+over it), and synchronizes contexts between your **trusted devices** with
+end-to-end encryption. The `contexa` CLI is a human-facing client over the same
+API for setup and debugging.
+
+The system is built to be driven by agents and automation, not by a person at a
+terminal: the HTTP API and SDK are the primary surface, and the CLI is the
+escape hatch. That priority shapes the contracts below — stable JSON shapes, a
+uniform error envelope, and immutable versioning are there so a program can
+depend on them.
 
 Design goals that shape everything below:
 
+- **Agent-first** — the local HTTP API (and the SDK over it) is the interface
+  that matters; everything is designed to be consumed programmatically.
 - **Local-first** — every device holds the full state; the network is an
   optimization, not a dependency. The API binds to `127.0.0.1` only.
 - **Durable & auditable** — content writes are immutable and checksummed;
