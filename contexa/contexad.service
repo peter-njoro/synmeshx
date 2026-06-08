@@ -1,6 +1,6 @@
 [Unit]
 Description=Contexa local context engine daemon
-Documentation=https://github.com/contexa/contexa
+Documentation=https://github.com/peter-njoro/contexa
 After=network.target
 
 [Service]

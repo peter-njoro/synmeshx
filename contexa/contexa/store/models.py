@@ -32,9 +32,7 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# ---------------------------------------------------------------------------
 # Context tables
-# ---------------------------------------------------------------------------
 
 class ContextRecord(Base):
     """Top-level context record.
@@ -90,9 +88,7 @@ class ContextVersionRecord(Base):
     )
 
 
-# ---------------------------------------------------------------------------
 # Device identity and trust
-# ---------------------------------------------------------------------------
 
 class DeviceRecord(Base):
     """A known device — either this device (self) or a trusted peer.
@@ -138,9 +134,7 @@ class TrustEntryRecord(Base):
     )
 
 
-# ---------------------------------------------------------------------------
 # Sync log
-# ---------------------------------------------------------------------------
 
 class SyncLogRecord(Base):
     """Audit record for a single sync operation.
@@ -161,9 +155,7 @@ class SyncLogRecord(Base):
     )
 
 
-# ---------------------------------------------------------------------------
 # Embeddings
-# ---------------------------------------------------------------------------
 
 class EmbeddingRecord(Base):
     """Vector embedding for a specific context version.

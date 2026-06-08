@@ -29,9 +29,7 @@ from contexa.sync.crypto import generate_device_identity
 from contexa.sync.engine import SyncEngine
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def make_wired_app(tmp_path):
     """Create a fully wired FastAPI app with in-memory stores."""
@@ -69,9 +67,7 @@ def make_wired_app(tmp_path):
     return app, session
 
 
-# ---------------------------------------------------------------------------
 # Health endpoint reflects component states
-# ---------------------------------------------------------------------------
 
 def test_health_endpoint_returns_ok_when_all_components_present(tmp_path):
     app, _ = make_wired_app(tmp_path)
@@ -94,9 +90,7 @@ def test_health_endpoint_returns_degraded_when_sync_engine_missing(tmp_path):
     assert r.json()["status"] == "degraded"
 
 
-# ---------------------------------------------------------------------------
 # Startup sequence — config loading
-# ---------------------------------------------------------------------------
 
 def test_main_exits_nonzero_on_config_error(tmp_path):
     """Daemon exits with code 1 when config is invalid."""
@@ -125,9 +119,7 @@ def test_main_exits_nonzero_on_db_failure(tmp_path):
     assert exc_info.value.code == 1
 
 
-# ---------------------------------------------------------------------------
 # Startup sequence — component initialization order
-# ---------------------------------------------------------------------------
 
 def test_daemon_initializes_all_components(tmp_path):
     """All required components are present on app.state after wiring."""
@@ -147,9 +139,7 @@ def test_device_id_is_set_on_app_state(tmp_path):
     assert len(app.state.device_id) > 0
 
 
-# ---------------------------------------------------------------------------
 # Metrics endpoint
-# ---------------------------------------------------------------------------
 
 def test_metrics_endpoint_returns_uptime(tmp_path):
     app, _ = make_wired_app(tmp_path)
@@ -162,9 +152,7 @@ def test_metrics_endpoint_returns_uptime(tmp_path):
     assert "syncs_completed" in body
 
 
-# ---------------------------------------------------------------------------
 # Config endpoint
-# ---------------------------------------------------------------------------
 
 def test_config_endpoint_returns_resolved_config(tmp_path):
     app, _ = make_wired_app(tmp_path)
@@ -176,9 +164,7 @@ def test_config_endpoint_returns_resolved_config(tmp_path):
     assert body["sync_mode"] == "hosted"
 
 
-# ---------------------------------------------------------------------------
 # Logging configuration
-# ---------------------------------------------------------------------------
 
 def test_configure_logging_does_not_raise():
     """_configure_logging() runs without error for all valid log levels."""

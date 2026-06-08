@@ -27,9 +27,7 @@ import httpx
 from contexa.store.models import DeviceRecord
 
 
-# ---------------------------------------------------------------------------
 # Google OAuth constants (Device Authorization Grant)
-# ---------------------------------------------------------------------------
 
 GOOGLE_DEVICE_AUTH_URL = "https://oauth2.googleapis.com/device/code"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -42,9 +40,7 @@ OAUTH_SCOPE = "openid email"
 DEFAULT_IDENTITY_FILE = Path("~/.config/contexa/identity.json")
 
 
-# ---------------------------------------------------------------------------
 # Exceptions
-# ---------------------------------------------------------------------------
 
 class AuthError(Exception):
     """Raised when authentication fails or is required."""
@@ -61,9 +57,7 @@ class NotAuthenticatedError(AuthError):
     pass
 
 
-# ---------------------------------------------------------------------------
 # Data classes
-# ---------------------------------------------------------------------------
 
 @dataclass
 class IdentityToken:
@@ -87,9 +81,7 @@ class IdentityToken:
         return cls(**data)
 
 
-# ---------------------------------------------------------------------------
 # Token storage
-# ---------------------------------------------------------------------------
 
 def _token_path(config_dir: Path | None = None) -> Path:
     if config_dir:
@@ -141,9 +133,7 @@ def get_identity_id(config_dir: Path | None = None) -> str:
     return token.identity_id
 
 
-# ---------------------------------------------------------------------------
 # Google OAuth Device Flow
-# ---------------------------------------------------------------------------
 
 def start_device_flow(client_id: str) -> dict:
     """Start the Google OAuth device authorization flow.
@@ -275,9 +265,7 @@ def refresh_token(config_dir: Path | None = None, client_id: str = "", client_se
     return token
 
 
-# ---------------------------------------------------------------------------
 # Device-to-device identity verification
-# ---------------------------------------------------------------------------
 
 def verify_device_identity(
     device_id: str,

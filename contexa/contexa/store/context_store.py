@@ -21,9 +21,7 @@ from sqlalchemy.orm import Session
 from contexa.store.models import ContextRecord, ContextVersionRecord
 
 
-# ---------------------------------------------------------------------------
 # Exceptions
-# ---------------------------------------------------------------------------
 
 class NotFoundError(Exception):
     """Raised when a requested Context_ID or Version_Tag does not exist."""
@@ -49,9 +47,7 @@ class ChecksumError(Exception):
         )
 
 
-# ---------------------------------------------------------------------------
 # Data transfer objects
-# ---------------------------------------------------------------------------
 
 @dataclass
 class ContextVersion:
@@ -76,9 +72,7 @@ class ContextSummary:
     label: str | None = None
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _compute_checksum(content: dict[str, Any]) -> str:
     """Compute SHA-256 of the canonical JSON representation of content."""
@@ -108,9 +102,7 @@ def _record_to_version(record: ContextVersionRecord, label: str | None) -> Conte
     )
 
 
-# ---------------------------------------------------------------------------
 # Context_Store
-# ---------------------------------------------------------------------------
 
 class ContextStore:
     """Manages all reads and writes to the contexts and context_versions tables."""
@@ -118,9 +110,7 @@ class ContextStore:
     def __init__(self, session: Session) -> None:
         self._session = session
 
-    # ------------------------------------------------------------------
     # Write operations
-    # ------------------------------------------------------------------
 
     def create(
         self,
@@ -259,9 +249,7 @@ class ContextStore:
         self._session.delete(ctx)
         self._session.commit()
 
-    # ------------------------------------------------------------------
     # Read operations
-    # ------------------------------------------------------------------
 
     def get(
         self,
@@ -344,9 +332,7 @@ class ContextStore:
         )
         return [_record_to_version(r, ctx.label) for r in records]
 
-    # ------------------------------------------------------------------
     # Integrity
-    # ------------------------------------------------------------------
 
     def verify_checksum(self, record: ContextVersionRecord) -> bool:
         """Verify the stored checksum matches the content.
@@ -366,9 +352,7 @@ class ContextStore:
             raise ChecksumError(record.context_id, record.version_tag)
         return True
 
-    # ------------------------------------------------------------------
     # Internal helpers
-    # ------------------------------------------------------------------
 
     def _get_latest_version_record(
         self, context_id: str

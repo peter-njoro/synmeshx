@@ -31,9 +31,7 @@ from contexa.store.database import Base
 from contexa.store.models import DeviceRecord
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def config_dir(tmp_path):
@@ -63,9 +61,7 @@ def make_token(expired: bool = False) -> IdentityToken:
     )
 
 
-# ---------------------------------------------------------------------------
 # Token storage
-# ---------------------------------------------------------------------------
 
 def test_save_and_load_token(config_dir):
     token = make_token()
@@ -97,9 +93,7 @@ def test_clear_token_removes_file(config_dir):
         load_token(config_dir)
 
 
-# ---------------------------------------------------------------------------
 # Token expiry
-# ---------------------------------------------------------------------------
 
 def test_is_expired_returns_false_for_valid_token():
     token = make_token(expired=False)
@@ -128,9 +122,7 @@ def test_get_identity_id_raises_when_not_authenticated(config_dir):
         get_identity_id(config_dir)
 
 
-# ---------------------------------------------------------------------------
 # Identity association with device
-# ---------------------------------------------------------------------------
 
 def test_associate_identity_stores_in_db(session):
     device = DeviceRecord(device_id="dev-001", public_key=b"\x00" * 32)
@@ -148,9 +140,7 @@ def test_associate_identity_missing_device_raises(session):
         associate_identity("nonexistent-device", "google-sub-12345", session)
 
 
-# ---------------------------------------------------------------------------
 # Device identity verification
-# ---------------------------------------------------------------------------
 
 def test_verify_device_identity_returns_true_for_match(session):
     device = DeviceRecord(
@@ -188,9 +178,7 @@ def test_verify_device_identity_returns_false_when_no_identity_set(session):
     assert not verify_device_identity("dev-001", "google-sub-12345", session)
 
 
-# ---------------------------------------------------------------------------
 # Token round-trip serialization
-# ---------------------------------------------------------------------------
 
 def test_token_round_trip_serialization():
     token = make_token()

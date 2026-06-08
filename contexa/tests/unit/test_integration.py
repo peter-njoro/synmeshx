@@ -32,9 +32,7 @@ from contexa.sync.engine import SyncEngine
 runner = CliRunner()
 
 
-# ---------------------------------------------------------------------------
 # Shared fixture: in-process daemon with TestClient
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def live_app(tmp_path):
@@ -72,9 +70,7 @@ def live_app(tmp_path):
     return app
 
 
-# ---------------------------------------------------------------------------
 # Helper: mock the CLI's HTTP calls to go through TestClient
-# ---------------------------------------------------------------------------
 
 def make_cli_caller(live_app):
     """Return a function that patches CLI HTTP calls to use TestClient."""
@@ -127,9 +123,7 @@ def make_cli_caller(live_app):
     return mock_get, mock_post, mock_put, mock_patch, mock_delete
 
 
-# ---------------------------------------------------------------------------
 # Integration: create → get → list → delete round-trip
-# ---------------------------------------------------------------------------
 
 def test_context_create_get_list_delete_roundtrip(live_app):
     """Full CLI round-trip: create → get → list → delete."""

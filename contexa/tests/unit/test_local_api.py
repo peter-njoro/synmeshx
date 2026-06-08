@@ -18,9 +18,7 @@ from contexa.store.database import Base
 from contexa.store.context_store import ContextStore
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def client():
@@ -57,9 +55,7 @@ def client():
 CONTENT = {"task": "test the API", "status": "pending"}
 
 
-# ---------------------------------------------------------------------------
 # POST /contexts
-# ---------------------------------------------------------------------------
 
 def test_create_context_returns_201(client):
     r = client.post("/contexts", json={"content": CONTENT})
@@ -89,9 +85,7 @@ def test_create_context_missing_body_returns_400(client):
     assert r.status_code == 400
 
 
-# ---------------------------------------------------------------------------
 # GET /contexts
-# ---------------------------------------------------------------------------
 
 def test_list_contexts_empty(client):
     r = client.get("/contexts")
@@ -113,9 +107,7 @@ def test_list_contexts_includes_label(client):
     assert r.json()[0]["label"] == "labelled"
 
 
-# ---------------------------------------------------------------------------
 # GET /contexts/{context_id}
-# ---------------------------------------------------------------------------
 
 def test_get_context_returns_latest(client):
     created = client.post("/contexts", json={"content": CONTENT}).json()
@@ -130,9 +122,7 @@ def test_get_context_not_found_returns_404(client):
     assert r.json()["error"] == "not_found"
 
 
-# ---------------------------------------------------------------------------
 # GET /contexts/{context_id}/versions/{version_tag}
-# ---------------------------------------------------------------------------
 
 def test_get_specific_version(client):
     created = client.post("/contexts", json={"content": {"v": 1}}).json()
@@ -152,9 +142,7 @@ def test_get_specific_version_not_found(client):
     assert r.status_code == 404
 
 
-# ---------------------------------------------------------------------------
 # PUT /contexts/{context_id}
-# ---------------------------------------------------------------------------
 
 def test_update_context_creates_new_version(client):
     created = client.post("/contexts", json={"content": {"v": 1}}).json()
@@ -171,9 +159,7 @@ def test_update_context_not_found_returns_404(client):
     assert r.status_code == 404
 
 
-# ---------------------------------------------------------------------------
 # PATCH /contexts/{context_id}/label
-# ---------------------------------------------------------------------------
 
 def test_patch_label_updates_without_new_version(client):
     created = client.post("/contexts", json={"content": CONTENT}).json()
@@ -201,9 +187,7 @@ def test_patch_label_not_found_returns_404(client):
     assert r.status_code == 404
 
 
-# ---------------------------------------------------------------------------
 # DELETE /contexts/{context_id}
-# ---------------------------------------------------------------------------
 
 def test_delete_context_returns_204(client):
     created = client.post("/contexts", json={"content": CONTENT}).json()
@@ -223,9 +207,7 @@ def test_delete_context_not_found_returns_404(client):
     assert r.status_code == 404
 
 
-# ---------------------------------------------------------------------------
 # GET /health
-# ---------------------------------------------------------------------------
 
 def test_health_returns_ok(client):
     r = client.get("/health")
@@ -234,9 +216,7 @@ def test_health_returns_ok(client):
     assert body["context_store"]["status"] == "ok"
 
 
-# ---------------------------------------------------------------------------
 # GET /metrics
-# ---------------------------------------------------------------------------
 
 def test_metrics_returns_counters(client):
     client.post("/contexts", json={"content": {"x": 1}})
@@ -248,9 +228,7 @@ def test_metrics_returns_counters(client):
     assert body["uptime_seconds"] >= 0
 
 
-# ---------------------------------------------------------------------------
 # GET /config
-# ---------------------------------------------------------------------------
 
 def test_config_returns_resolved_values(client):
     r = client.get("/config")
@@ -261,9 +239,7 @@ def test_config_returns_resolved_values(client):
     assert "storage_data_dir" in body
 
 
-# ---------------------------------------------------------------------------
 # Localhost-only binding (Req 4.7)
-# ---------------------------------------------------------------------------
 
 def test_app_title_is_set(client):
     """Smoke test that the app is configured correctly."""

@@ -17,9 +17,7 @@ from relay.router import MessageRouter
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def make_device():
     """Generate a test device with Ed25519 key pair."""
@@ -37,9 +35,7 @@ def sign_challenge(private_key, challenge: bytes) -> str:
     return private_key.sign(challenge).hex()
 
 
-# ---------------------------------------------------------------------------
 # Auth — challenge/response
-# ---------------------------------------------------------------------------
 
 def test_generate_challenge_is_32_bytes():
     challenge = generate_challenge()
@@ -119,9 +115,7 @@ def test_short_public_key_is_rejected():
     )
 
 
-# ---------------------------------------------------------------------------
 # Session registry
-# ---------------------------------------------------------------------------
 
 class MockWebSocket:
     def __init__(self):
@@ -189,9 +183,7 @@ def test_get_group_returns_all_in_group():
     assert all(s.trust_group_id == "group-A" for s in group_a)
 
 
-# ---------------------------------------------------------------------------
 # Router — namespace isolation
-# ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_router_delivers_to_same_group():

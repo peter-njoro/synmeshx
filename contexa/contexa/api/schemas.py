@@ -14,9 +14,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
 # Context schemas
-# ---------------------------------------------------------------------------
 
 class ContextCreateRequest(BaseModel):
     """Body for POST /contexts."""
@@ -55,9 +53,7 @@ class ContextSummaryResponse(BaseModel):
     label: str | None = None
 
 
-# ---------------------------------------------------------------------------
 # Health / metrics / config schemas
-# ---------------------------------------------------------------------------
 
 class ComponentStatus(BaseModel):
     status: str          # "ok" | "error"
@@ -95,9 +91,7 @@ class ResolvedConfigResponse(BaseModel):
     embeddings_model: str
 
 
-# ---------------------------------------------------------------------------
 # Error schemas
-# ---------------------------------------------------------------------------
 
 class ErrorResponse(BaseModel):
     """Standard error envelope returned on 4xx/5xx responses."""

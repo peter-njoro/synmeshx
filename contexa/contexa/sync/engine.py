@@ -57,9 +57,7 @@ from contexa.sync.protocol import (
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Sync modes
-# ---------------------------------------------------------------------------
 
 class SyncMode(str, Enum):
     LOCAL_ONLY = "local-only"
@@ -69,9 +67,7 @@ class SyncMode(str, Enum):
 HOSTED_RELAY_URL = "wss://relay.contexa.dev"
 
 
-# ---------------------------------------------------------------------------
 # Sync log helpers
-# ---------------------------------------------------------------------------
 
 def _write_sync_log(
     session: Session,
@@ -94,9 +90,7 @@ def _write_sync_log(
     session.commit()
 
 
-# ---------------------------------------------------------------------------
 # Pending operation queue
-# ---------------------------------------------------------------------------
 
 @dataclass
 class PendingOperation:
@@ -108,9 +102,7 @@ class PendingOperation:
     last_attempt: float = 0.0
 
 
-# ---------------------------------------------------------------------------
 # Sync result
-# ---------------------------------------------------------------------------
 
 @dataclass
 class SyncResult:
@@ -120,9 +112,7 @@ class SyncResult:
     failed: list[str] = field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
 # Sync Engine
-# ---------------------------------------------------------------------------
 
 class SyncEngine:
     """Coordinates context replication between trusted devices.
@@ -156,9 +146,7 @@ class SyncEngine:
         self.syncs_completed: int = 0
         self.sync_failures: int = 0
 
-    # ------------------------------------------------------------------
     # Relay configuration
-    # ------------------------------------------------------------------
 
     def get_relay_url(self) -> str | None:
         """Return the relay URL based on sync mode, or None for local-only."""
@@ -181,9 +169,7 @@ class SyncEngine:
         """Mark the relay as reachable again."""
         self._relay_available = True
 
-    # ------------------------------------------------------------------
     # Public interface
-    # ------------------------------------------------------------------
 
     def sync_with_peer(
         self,
@@ -337,9 +323,7 @@ class SyncEngine:
         """Return the backoff delay in seconds for a given attempt number."""
         return self._backoff_base ** attempt
 
-    # ------------------------------------------------------------------
     # Internal helpers
-    # ------------------------------------------------------------------
 
     def _build_version_map(self, context_id: str) -> dict[str, str | None]:
         """Build a {version_id: parent_version_id} map for a context."""

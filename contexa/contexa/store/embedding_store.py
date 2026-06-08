@@ -24,9 +24,7 @@ from sqlalchemy.orm import Session
 from contexa.store.models import EmbeddingRecord
 
 
-# ---------------------------------------------------------------------------
 # Exceptions
-# ---------------------------------------------------------------------------
 
 class EmbeddingDisabledError(Exception):
     """Raised when semantic search is called but no model is configured."""
@@ -38,9 +36,7 @@ class EmbeddingDisabledError(Exception):
         )
 
 
-# ---------------------------------------------------------------------------
 # Embedding Store
-# ---------------------------------------------------------------------------
 
 class EmbeddingStore:
     """Manages vector embeddings for semantic search over context objects.

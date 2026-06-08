@@ -47,9 +47,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # ------------------------------------------------------------------
     # Exception handlers
-    # ------------------------------------------------------------------
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(request: Request, exc: RequestValidationError):
@@ -97,9 +95,7 @@ def create_app() -> FastAPI:
             content={"error": "internal_error", "message": str(exc)},
         )
 
-    # ------------------------------------------------------------------
     # Routers
-    # ------------------------------------------------------------------
 
     app.include_router(contexts.router, tags=["contexts"])
     app.include_router(health.router, tags=["health"])

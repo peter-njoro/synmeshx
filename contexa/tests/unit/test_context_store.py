@@ -22,9 +22,7 @@ from contexa.store.context_store import (
 )
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def session():
@@ -46,9 +44,7 @@ DEVICE = "device-001"
 CONTENT = {"task": "write tests", "status": "in_progress"}
 
 
-# ---------------------------------------------------------------------------
 # Create
-# ---------------------------------------------------------------------------
 
 def test_create_returns_context_version(store):
     v = store.create(CONTENT, owner_device=DEVICE)
@@ -73,9 +69,7 @@ def test_create_computes_correct_checksum(store):
     assert v.checksum == expected
 
 
-# ---------------------------------------------------------------------------
 # Get (latest)
-# ---------------------------------------------------------------------------
 
 def test_get_returns_latest_version(store):
     v1 = store.create(CONTENT, owner_device=DEVICE)
@@ -106,9 +100,7 @@ def test_get_missing_version_tag_raises_not_found(store):
     assert exc.value.version_tag == "badtag"
 
 
-# ---------------------------------------------------------------------------
 # Update (new version)
-# ---------------------------------------------------------------------------
 
 def test_update_creates_new_version(store):
     v1 = store.create(CONTENT, owner_device=DEVICE)
@@ -130,9 +122,7 @@ def test_update_missing_context_raises_not_found(store):
         store.update("nonexistent-id", {"x": 1})
 
 
-# ---------------------------------------------------------------------------
 # Version history
-# ---------------------------------------------------------------------------
 
 def test_list_versions_returns_all_in_order(store):
     v1 = store.create(CONTENT, owner_device=DEVICE)
@@ -148,9 +138,7 @@ def test_list_versions_missing_context_raises_not_found(store):
         store.list_versions("nonexistent-id")
 
 
-# ---------------------------------------------------------------------------
 # List all
-# ---------------------------------------------------------------------------
 
 def test_list_all_returns_all_contexts(store):
     store.create({"a": 1}, owner_device=DEVICE)
@@ -174,9 +162,7 @@ def test_list_all_includes_label(store):
     assert None in labels
 
 
-# ---------------------------------------------------------------------------
 # Delete
-# ---------------------------------------------------------------------------
 
 def test_delete_removes_context(store):
     v = store.create(CONTENT, owner_device=DEVICE)
@@ -196,9 +182,7 @@ def test_delete_removes_from_list(store):
     assert store.list_all() == []
 
 
-# ---------------------------------------------------------------------------
 # Label update (no new version)
-# ---------------------------------------------------------------------------
 
 def test_update_label_does_not_create_version(store):
     v = store.create(CONTENT, owner_device=DEVICE)
@@ -226,9 +210,7 @@ def test_update_label_missing_context_raises_not_found(store):
         store.update_label("nonexistent-id", "label")
 
 
-# ---------------------------------------------------------------------------
 # Checksum integrity
-# ---------------------------------------------------------------------------
 
 def test_checksum_tamper_detected(store, session):
     from contexa.store.models import ContextVersionRecord
@@ -246,9 +228,7 @@ def test_checksum_tamper_detected(store, session):
     assert exc.value.context_id == v.context_id
 
 
-# ---------------------------------------------------------------------------
 # Serialisation round-trip (Req 3.5)
-# ---------------------------------------------------------------------------
 
 def test_content_round_trip(store):
     """Arbitrary JSON content survives a write → read cycle unchanged."""

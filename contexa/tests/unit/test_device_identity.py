@@ -36,9 +36,7 @@ from contexa.sync.crypto import (
 )
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def tmp_data_dir(tmp_path):
@@ -63,9 +61,7 @@ def trust_store(session, tmp_data_dir):
     return TrustStore(session, data_dir=tmp_data_dir)
 
 
-# ---------------------------------------------------------------------------
 # Key generation
-# ---------------------------------------------------------------------------
 
 def test_generate_device_identity_produces_unique_ids():
     id1 = generate_device_identity()
@@ -86,9 +82,7 @@ def test_public_key_bytes_is_32_bytes():
     assert len(identity.public_key_bytes()) == 32
 
 
-# ---------------------------------------------------------------------------
 # Key persistence
-# ---------------------------------------------------------------------------
 
 def test_save_and_load_identity(tmp_data_dir):
     identity = generate_device_identity()
@@ -122,9 +116,7 @@ def test_load_or_generate_is_idempotent(tmp_data_dir):
     assert id1.public_key_bytes() == id2.public_key_bytes()
 
 
-# ---------------------------------------------------------------------------
 # Ed25519 sign / verify
-# ---------------------------------------------------------------------------
 
 def test_sign_verify_roundtrip():
     identity = generate_device_identity()
@@ -146,9 +138,7 @@ def test_verify_wrong_key_fails():
     assert not verify(id2.public_key, b"message", sig)
 
 
-# ---------------------------------------------------------------------------
 # X25519 + AES-256-GCM
-# ---------------------------------------------------------------------------
 
 def test_encrypt_decrypt_roundtrip():
     priv_a, pub_a = generate_x25519_keypair()
@@ -187,9 +177,7 @@ def test_nonce_is_12_bytes():
     assert len(generate_nonce()) == 12
 
 
-# ---------------------------------------------------------------------------
 # TrustStore — register_self
-# ---------------------------------------------------------------------------
 
 def test_register_self_creates_identity(trust_store, tmp_data_dir):
     identity = trust_store.register_self()
@@ -203,9 +191,7 @@ def test_register_self_is_idempotent(trust_store):
     assert id1.device_id == id2.device_id
 
 
-# ---------------------------------------------------------------------------
 # TrustStore — add / remove / list
-# ---------------------------------------------------------------------------
 
 def test_add_trusted_device(trust_store):
     peer = generate_device_identity()

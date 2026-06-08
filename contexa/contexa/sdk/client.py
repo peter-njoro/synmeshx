@@ -64,9 +64,7 @@ class ContexaClient:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
 
-    # ------------------------------------------------------------------
     # Internal HTTP helpers
-    # ------------------------------------------------------------------
 
     def _get(self, path: str) -> Any:
         """Send a GET request and return the parsed JSON response."""
@@ -137,9 +135,7 @@ class ContexaClient:
             from contexa.sdk.exceptions import ContexaError
             raise ContexaError(f"Daemon error ({response.status_code}): {msg}")
 
-    # ------------------------------------------------------------------
     # Context operations
-    # ------------------------------------------------------------------
 
     def create_context(
         self,
@@ -258,9 +254,7 @@ class ContexaClient:
         """
         return self._patch(f"/contexts/{context_id}/label", {"label": label})
 
-    # ------------------------------------------------------------------
     # Semantic search
-    # ------------------------------------------------------------------
 
     def search(
         self,
@@ -286,9 +280,7 @@ class ContexaClient:
         """
         return self._get(f"/contexts/search?q={query}&top_n={top_n}")
 
-    # ------------------------------------------------------------------
     # Sync operations
-    # ------------------------------------------------------------------
 
     def trigger_sync(self) -> dict[str, Any]:
         """Trigger a manual sync cycle.
@@ -339,9 +331,7 @@ class ContexaClient:
             path += "?" + "&".join(params)
         return self._get(path)
 
-    # ------------------------------------------------------------------
     # Health / config
-    # ------------------------------------------------------------------
 
     def health(self) -> dict[str, Any]:
         """Return the daemon health status.

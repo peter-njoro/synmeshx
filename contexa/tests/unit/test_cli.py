@@ -19,9 +19,7 @@ from contexa.cli.main import app
 runner = CliRunner()
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def mock_get(path: str):
     """Return mock API responses keyed by path prefix."""
@@ -59,9 +57,7 @@ def _mock_version(context_id: str, version_tag: str) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # context list
-# ---------------------------------------------------------------------------
 
 def test_context_list_human_readable():
     with patch("contexa.cli.commands.context.api_get", side_effect=mock_get):
@@ -87,9 +83,7 @@ def test_context_list_empty():
     assert "No contexts found" in result.output
 
 
-# ---------------------------------------------------------------------------
 # context get
-# ---------------------------------------------------------------------------
 
 def test_context_get_human_readable():
     with patch("contexa.cli.commands.context.api_get", side_effect=mock_get):
@@ -114,9 +108,7 @@ def test_context_get_specific_version():
     assert "abc-123" in result.output
 
 
-# ---------------------------------------------------------------------------
 # context create
-# ---------------------------------------------------------------------------
 
 def test_context_create_with_json_flag():
     mock_response = _mock_version("new-ctx", "abc12345")
@@ -145,9 +137,7 @@ def test_context_create_no_input():
     assert result.exit_code == 1
 
 
-# ---------------------------------------------------------------------------
 # context delete
-# ---------------------------------------------------------------------------
 
 def test_context_delete_with_yes_flag():
     with patch("contexa.cli.commands.context.api_delete") as mock_del:
@@ -163,9 +153,7 @@ def test_context_delete_aborted():
     assert "Aborted" in result.output
 
 
-# ---------------------------------------------------------------------------
 # context label
-# ---------------------------------------------------------------------------
 
 def test_context_label_set():
     mock_response = {"context_id": "abc-123", "latest_version_tag": "v1",
@@ -176,9 +164,7 @@ def test_context_label_set():
     assert "new-label" in result.output
 
 
-# ---------------------------------------------------------------------------
 # config show
-# ---------------------------------------------------------------------------
 
 def test_config_show_human_readable():
     with patch("contexa.cli.commands.config.api_get", side_effect=mock_get):
@@ -195,9 +181,7 @@ def test_config_show_json_flag():
     assert data["daemon_port"] == 7474
 
 
-# ---------------------------------------------------------------------------
 # Offline daemon error (Req 5.6)
-# ---------------------------------------------------------------------------
 
 def test_offline_daemon_shows_clear_message():
     """When daemon is offline, CLI prints a clear message — not a raw connection error."""
@@ -213,9 +197,7 @@ def test_offline_daemon_exits_nonzero():
     assert result.exit_code != 0
 
 
-# ---------------------------------------------------------------------------
 # Non-zero exit on API error (Req 5.4)
-# ---------------------------------------------------------------------------
 
 def test_api_error_exits_nonzero():
     mock_resp = MagicMock()

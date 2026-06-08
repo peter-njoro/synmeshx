@@ -84,9 +84,7 @@ def main(config_path: Path | None = None) -> None:
     Args:
         config_path: Optional path to config file. Uses default if None.
     """
-    # ------------------------------------------------------------------
-    # Step 1: Load configuration
-    # ------------------------------------------------------------------
+    # Load configuration
     try:
         cfg = load_config(config_path)
     except ConfigError as e:
@@ -96,17 +94,14 @@ def main(config_path: Path | None = None) -> None:
         print(f"[contexad] Failed to load config: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 2: Initialize logging
-    # ------------------------------------------------------------------
+    # Initialize logging
+
     _configure_logging(cfg.daemon.log_level, cfg.daemon.log_output)
     install_global_exception_handler()
     log = structlog.get_logger("contexad")
     log.info("Contexa daemon starting", version="0.1.0")
 
-    # ------------------------------------------------------------------
-    # Step 3: Open SQLite database and run migrations
-    # ------------------------------------------------------------------
+    # Open SQLite database and run migrations
     try:
         data_dir = cfg.storage.data_dir
         init_db(data_dir)
@@ -118,9 +113,7 @@ def main(config_path: Path | None = None) -> None:
         log.error("Failed to initialize database", error=str(e))
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 4: Initialize stores
-    # ------------------------------------------------------------------
+    # Initialize stores
     try:
         context_store = ContextStore(session)
         trust_store = TrustStore(session, data_dir=data_dir)
@@ -132,9 +125,7 @@ def main(config_path: Path | None = None) -> None:
         log.error("Failed to initialize stores", error=str(e))
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 5: Load or generate device identity
-    # ------------------------------------------------------------------
+    # Load or generate device identity
     try:
         identity = trust_store.register_self()
         log.info("Device identity loaded", device_id=identity.device_id)
@@ -142,9 +133,7 @@ def main(config_path: Path | None = None) -> None:
         log.error("Failed to load device identity", error=str(e))
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 6: Initialize Sync Engine
-    # ------------------------------------------------------------------
+    # Initialize Sync Engine
     try:
         sync_mode = SyncMode(cfg.sync.mode)
         sync_engine = SyncEngine(
@@ -162,9 +151,7 @@ def main(config_path: Path | None = None) -> None:
         log.error("Failed to initialize sync engine", error=str(e))
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 7: Build and configure the FastAPI app
-    # ------------------------------------------------------------------
+    # Build and configure the FastAPI app
     app = create_app()
     app.state.context_store = context_store
     app.state.trust_store = trust_store
@@ -176,9 +163,7 @@ def main(config_path: Path | None = None) -> None:
     app.state.syncs_completed = 0
     app.state.sync_failures = 0
 
-    # ------------------------------------------------------------------
-    # Step 8: Configure uvicorn server (localhost only)
-    # ------------------------------------------------------------------
+    # Configure uvicorn server (localhost only)
     if cfg.daemon.socket_path:
         uv_config = uvicorn.Config(
             app=app,
@@ -195,9 +180,7 @@ def main(config_path: Path | None = None) -> None:
 
     server = uvicorn.Server(uv_config)
 
-    # ------------------------------------------------------------------
-    # Step 9: Register signal handlers for graceful shutdown
-    # ------------------------------------------------------------------
+    # Register signal handlers for graceful shutdown
     def _shutdown(signum, frame):
         log.info("Shutdown signal received", signal=signum)
         server.should_exit = True
@@ -205,9 +188,7 @@ def main(config_path: Path | None = None) -> None:
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
 
-    # ------------------------------------------------------------------
     # Start serving
-    # ------------------------------------------------------------------
     log.info(
         "Local API listening",
         host="127.0.0.1" if not cfg.daemon.socket_path else cfg.daemon.socket_path,

@@ -22,9 +22,7 @@ from contexa.sync.crypto import (
 )
 
 
-# ---------------------------------------------------------------------------
 # Data transfer objects
-# ---------------------------------------------------------------------------
 
 @dataclass
 class TrustEntry:
@@ -36,9 +34,7 @@ class TrustEntry:
     revoked: bool
 
 
-# ---------------------------------------------------------------------------
 # Exceptions
-# ---------------------------------------------------------------------------
 
 class DeviceNotFoundError(Exception):
     def __init__(self, device_id: str) -> None:
@@ -52,9 +48,7 @@ class DeviceAlreadyTrustedError(Exception):
         super().__init__(f"Device '{device_id}' is already trusted")
 
 
-# ---------------------------------------------------------------------------
 # TrustStore
-# ---------------------------------------------------------------------------
 
 class TrustStore:
     """Manages the local registry of trusted devices."""
@@ -64,9 +58,7 @@ class TrustStore:
         self._data_dir = Path(data_dir or "~/.local/share/contexa").expanduser()
         self._identity: DeviceIdentity | None = None
 
-    # ------------------------------------------------------------------
     # Self registration
-    # ------------------------------------------------------------------
 
     def register_self(self) -> DeviceIdentity:
         """Load or generate this device's identity and register it in the DB.
@@ -98,9 +90,7 @@ class TrustStore:
             raise RuntimeError("TrustStore.register_self() has not been called")
         return self._identity
 
-    # ------------------------------------------------------------------
     # Trust management
-    # ------------------------------------------------------------------
 
     def add_trusted(
         self,
@@ -201,9 +191,7 @@ class TrustStore:
         return device.public_key
 
 
-# ---------------------------------------------------------------------------
 # Internal helpers
-# ---------------------------------------------------------------------------
 
 def _record_to_entry(device: DeviceRecord, trust: TrustEntryRecord) -> TrustEntry:
     return TrustEntry(

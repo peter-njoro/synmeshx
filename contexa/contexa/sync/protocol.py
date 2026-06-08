@@ -19,9 +19,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Any
 
 
-# ---------------------------------------------------------------------------
 # Message types
-# ---------------------------------------------------------------------------
 
 MSG_HELLO = "HELLO"
 MSG_KNOWN_VERSIONS = "KNOWN_VERSIONS"
@@ -77,9 +75,7 @@ class AckMessage:
     rejected: list[str] = field(default_factory=list)    # version_ids rejected (auth/integrity)
 
 
-# ---------------------------------------------------------------------------
 # Serialization
-# ---------------------------------------------------------------------------
 
 def serialize(msg: Any) -> bytes:
     """Serialize a protocol message to JSON bytes."""
@@ -102,9 +98,7 @@ def deserialize(data: bytes) -> Any:
     raise ValueError(f"Unknown message type: {msg_type}")
 
 
-# ---------------------------------------------------------------------------
 # Ancestor-chain conflict detection
-# ---------------------------------------------------------------------------
 
 def is_ancestor(
     candidate_version_id: str,

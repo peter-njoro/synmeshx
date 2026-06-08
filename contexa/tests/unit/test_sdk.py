@@ -34,9 +34,7 @@ from contexa.sync.crypto import generate_device_identity
 from contexa.sync.engine import SyncEngine
 
 
-# ---------------------------------------------------------------------------
 # Fixtures: live in-process app + SDK client wired together
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def live_client(tmp_path):
@@ -129,9 +127,7 @@ def live_client(tmp_path):
         yield sdk
 
 
-# ---------------------------------------------------------------------------
 # create_context
-# ---------------------------------------------------------------------------
 
 def test_create_context_returns_dict(live_client):
     ctx = live_client.create_context({"task": "test"})
@@ -146,9 +142,7 @@ def test_create_context_with_label(live_client):
     assert ctx["label"] == "my-label"
 
 
-# ---------------------------------------------------------------------------
 # get_context
-# ---------------------------------------------------------------------------
 
 def test_get_context_returns_latest(live_client):
     created = live_client.create_context({"v": 1})
@@ -171,9 +165,7 @@ def test_get_context_not_found_raises(live_client):
         live_client.get_context("nonexistent-id")
 
 
-# ---------------------------------------------------------------------------
 # update_context
-# ---------------------------------------------------------------------------
 
 def test_update_context_creates_new_version(live_client):
     v1 = live_client.create_context({"v": 1})
@@ -188,9 +180,7 @@ def test_update_context_not_found_raises(live_client):
         live_client.update_context("nonexistent-id", {"x": 1})
 
 
-# ---------------------------------------------------------------------------
 # list_contexts
-# ---------------------------------------------------------------------------
 
 def test_list_contexts_returns_list(live_client):
     live_client.create_context({"a": 1})
@@ -204,9 +194,7 @@ def test_list_contexts_empty(live_client):
     assert live_client.list_contexts() == []
 
 
-# ---------------------------------------------------------------------------
 # delete_context
-# ---------------------------------------------------------------------------
 
 def test_delete_context_removes_it(live_client):
     ctx = live_client.create_context({"x": 1})
@@ -220,9 +208,7 @@ def test_delete_context_not_found_raises(live_client):
         live_client.delete_context("nonexistent-id")
 
 
-# ---------------------------------------------------------------------------
 # update_label
-# ---------------------------------------------------------------------------
 
 def test_update_label_sets_label(live_client):
     ctx = live_client.create_context({"x": 1})
@@ -236,9 +222,7 @@ def test_update_label_clears_label(live_client):
     assert result["label"] is None
 
 
-# ---------------------------------------------------------------------------
 # health / config
-# ---------------------------------------------------------------------------
 
 def test_health_returns_ok(live_client):
     h = live_client.health()
@@ -250,9 +234,7 @@ def test_get_config_returns_port(live_client):
     assert cfg["daemon_port"] == 7474
 
 
-# ---------------------------------------------------------------------------
 # Connection error (Req 13.5)
-# ---------------------------------------------------------------------------
 
 def test_connection_error_raises_contexa_connection_error():
     """When daemon is offline, SDK raises ContexaConnectionError — not raw httpx error."""
@@ -276,9 +258,7 @@ def test_connection_error_not_raw_httpx():
             assert False, "Raw httpx.ConnectError leaked through SDK"
 
 
-# ---------------------------------------------------------------------------
 # Type annotations (Req 13.7)
-# ---------------------------------------------------------------------------
 
 def test_all_public_methods_have_annotations():
     """All public methods on ContexaClient have type annotations."""
@@ -294,9 +274,7 @@ def test_all_public_methods_have_annotations():
         assert "return" in hints, f"{method_name} missing return type annotation"
 
 
-# ---------------------------------------------------------------------------
 # Docstrings (Req 13.8)
-# ---------------------------------------------------------------------------
 
 def test_all_public_methods_have_docstrings():
     """All public methods on ContexaClient have docstrings."""

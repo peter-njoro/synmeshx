@@ -33,9 +33,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 
-# ---------------------------------------------------------------------------
 # Device identity
-# ---------------------------------------------------------------------------
 
 @dataclass
 class DeviceIdentity:
@@ -131,9 +129,7 @@ def public_key_from_bytes(raw_bytes: bytes) -> Ed25519PublicKey:
     return Ed25519PublicKey.from_public_bytes(raw_bytes)
 
 
-# ---------------------------------------------------------------------------
 # Ed25519 signing / verification
-# ---------------------------------------------------------------------------
 
 def sign(private_key: Ed25519PrivateKey, message: bytes) -> bytes:
     """Sign a message with an Ed25519 private key. Returns 64-byte signature."""
@@ -149,9 +145,7 @@ def verify(public_key: Ed25519PublicKey, message: bytes, signature: bytes) -> bo
         return False
 
 
-# ---------------------------------------------------------------------------
 # X25519 key exchange + AES-256-GCM session encryption
-# ---------------------------------------------------------------------------
 
 def generate_x25519_keypair() -> tuple[X25519PrivateKey, X25519PublicKey]:
     """Generate an ephemeral X25519 key pair for a sync session."""

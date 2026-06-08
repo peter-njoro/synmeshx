@@ -34,9 +34,7 @@ from contexa.sync.protocol import (
 from contexa.sync.crypto import generate_device_identity
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def session():
@@ -85,9 +83,7 @@ def engine(session, context_store, trust_store, identity):
     )
 
 
-# ---------------------------------------------------------------------------
 # Protocol — serialization
-# ---------------------------------------------------------------------------
 
 def test_hello_message_round_trip():
     msg = HelloMessage(device_id="dev-001", identity_id="id-001", signature="sig", challenge="chal")
@@ -131,9 +127,7 @@ def test_deserialize_unknown_type_raises():
         deserialize(json.dumps({"type": "UNKNOWN"}).encode())
 
 
-# ---------------------------------------------------------------------------
 # Protocol — ancestor chain
-# ---------------------------------------------------------------------------
 
 def test_is_ancestor_direct_parent():
     version_map = {"v2": "v1", "v1": None}
@@ -175,9 +169,7 @@ def test_detect_conflict_local_newer():
     assert not detect_conflict("v3", "v2", version_map)
 
 
-# ---------------------------------------------------------------------------
 # Sync Engine — trust enforcement
-# ---------------------------------------------------------------------------
 
 def test_sync_rejected_for_untrusted_device(engine, peer_identity, session):
     """Sync with an untrusted device returns empty result."""
@@ -213,9 +205,7 @@ def test_sync_rejected_for_identity_mismatch(engine, trust_store, peer_identity,
     assert result.accepted == []
 
 
-# ---------------------------------------------------------------------------
 # Sync Engine — replication
-# ---------------------------------------------------------------------------
 
 def _setup_peer(session, trust_store, peer_identity, identity_id="shared-identity"):
     """Register peer device with matching identity."""
@@ -285,9 +275,7 @@ def test_sync_log_written_for_each_operation(engine, trust_store, peer_identity,
         assert entry.created_at
 
 
-# ---------------------------------------------------------------------------
 # Sync Engine — offline queue and backoff
-# ---------------------------------------------------------------------------
 
 def test_queue_pending_writes_log(engine, session):
     """Queuing a pending operation writes a 'pending' sync_log entry."""
@@ -319,9 +307,7 @@ def test_syncs_completed_counter_increments(engine, trust_store, peer_identity, 
     assert engine.syncs_completed == 1
 
 
-# ---------------------------------------------------------------------------
 # Sync log filtering
-# ---------------------------------------------------------------------------
 
 def test_sync_log_filter_by_status(engine, trust_store, peer_identity, session):
     """get_sync_log() filters by status correctly."""

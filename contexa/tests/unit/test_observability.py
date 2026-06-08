@@ -31,9 +31,7 @@ from contexa.sync.crypto import generate_device_identity
 from contexa.sync.engine import SyncEngine
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def session():
@@ -76,9 +74,7 @@ def client(session, tmp_path):
         yield c, session, sync_engine
 
 
-# ---------------------------------------------------------------------------
 # Log level filtering (Req 12.1)
-# ---------------------------------------------------------------------------
 
 def test_configure_logging_info_suppresses_debug():
     """At INFO level, root logger does not emit DEBUG."""
@@ -107,9 +103,7 @@ def test_configure_logging_to_file(tmp_path):
     _configure_logging("INFO", log_file)  # should not raise
 
 
-# ---------------------------------------------------------------------------
 # /metrics endpoint (Req 12.4)
-# ---------------------------------------------------------------------------
 
 def test_metrics_contexts_stored_counter(client):
     c, session, _ = client
@@ -136,9 +130,7 @@ def test_metrics_sync_counters_present(client):
     assert "sync_failures" in body
 
 
-# ---------------------------------------------------------------------------
 # Sync log queryable via API (Req 12.3)
-# ---------------------------------------------------------------------------
 
 def _write_log(session, device_id, context_id, version_tag, status, created_at=None):
     import uuid
@@ -225,9 +217,7 @@ def test_sync_log_invalid_since_returns_400(client):
     assert r.status_code == 400
 
 
-# ---------------------------------------------------------------------------
 # Unhandled error logging (Req 12.2)
-# ---------------------------------------------------------------------------
 
 def test_log_unhandled_error_includes_traceback():
     """log_unhandled_error() logs error type, message, and traceback."""

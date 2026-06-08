@@ -25,9 +25,7 @@ from contexa.store.embedding_store import EmbeddingStore, EmbeddingDisabledError
 from contexa.store.models import EmbeddingRecord
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def session():
@@ -67,9 +65,7 @@ def disabled_store(session):
     return EmbeddingStore(session, model_name="")
 
 
-# ---------------------------------------------------------------------------
 # EmbeddingStore — disabled
-# ---------------------------------------------------------------------------
 
 def test_disabled_store_raises_on_generate(disabled_store):
     with pytest.raises(EmbeddingDisabledError):
@@ -89,9 +85,7 @@ def test_enabled_store_enabled_is_true(embedding_store):
     assert embedding_store.enabled
 
 
-# ---------------------------------------------------------------------------
 # EmbeddingStore — generate and store
-# ---------------------------------------------------------------------------
 
 def test_generate_stores_embedding(embedding_store, session):
     embedding_store.generate_and_store("ctx-1", "v1", {"task": "write tests"})
@@ -118,9 +112,7 @@ def test_generate_on_update_creates_new_record(embedding_store, session):
     assert len(records) == 2
 
 
-# ---------------------------------------------------------------------------
 # EmbeddingStore — search
-# ---------------------------------------------------------------------------
 
 def test_search_returns_results_ordered_by_score(embedding_store, session):
     embedding_store.generate_and_store("ctx-1", "v1", {"topic": "machine learning"})
@@ -157,9 +149,7 @@ def test_search_returns_context_id_and_version_tag(embedding_store, session):
     assert isinstance(score, float)
 
 
-# ---------------------------------------------------------------------------
 # API — /contexts/search endpoint
-# ---------------------------------------------------------------------------
 
 def make_client_with_embeddings(embedding_store=None):
     engine = create_engine(
