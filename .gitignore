@@ -216,3 +216,7 @@ backend/uv.lock
 
 frontend/.next
 .kiro
+
+# Local-only planning / scratch notes (never committed)
+*.local.md
+notes/
