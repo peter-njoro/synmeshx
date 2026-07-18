@@ -159,6 +159,13 @@ def main(config_path: Path | None = None) -> None:
     app.state.sync_engine = sync_engine
     app.state.config = cfg
     app.state.device_id = identity.device_id
+
+    # identity_id (OAuth sub) is this device's trust-group id on the relay.
+    # It may be None until the user runs `contexa auth login`; the sync loop
+    # detects that and stays idle rather than connecting.
+    from contexa.store.models import DeviceRecord
+    device_record = session.get(DeviceRecord, identity.device_id)
+    app.state.identity_id = device_record.identity_id if device_record else None
     app.state.start_time = time.time()
     app.state.syncs_completed = 0
     app.state.sync_failures = 0

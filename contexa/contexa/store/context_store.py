@@ -202,6 +202,76 @@ class ContextStore:
 
         return _record_to_version(version, ctx.label)
 
+    def apply_remote_version(
+        self,
+        *,
+        version_id: str,
+        context_id: str,
+        version_tag: str,
+        parent_version: str | None,
+        content: dict[str, Any],
+        checksum: str,
+        created_at: datetime,
+        owner_device: str,
+        label: str | None = None,
+    ) -> bool:
+        """Insert a context version received from a peer during sync.
+
+        Unlike create()/update(), this preserves the peer's version_id,
+        version_tag, parent_version and created_at so the history chain stays
+        consistent across devices (which is what conflict detection relies on).
+
+        Creates the parent ContextRecord if this device has never seen the
+        context before. If the exact version_id already exists, this is a no-op.
+
+        Args:
+            version_id: The peer's version_id (preserved verbatim).
+            context_id: The context this version belongs to.
+            version_tag: The peer's short version tag.
+            parent_version: version_id of the parent, or None for a root.
+            content: The decrypted content payload.
+            checksum: The peer's checksum — must match content or ChecksumError.
+            created_at: The peer's creation timestamp (preserved for ordering).
+            owner_device: Device_ID to record as owner if the context is new.
+            label: Optional label to set on a newly created context.
+
+        Returns:
+            True if a new version row was inserted, False if it already existed.
+
+        Raises:
+            ChecksumError: If the supplied checksum does not match content.
+        """
+        expected = _compute_checksum(content)
+        if checksum != expected:
+            raise ChecksumError(context_id, version_tag)
+
+        # Idempotency: already have this exact version.
+        existing_version = self._session.get(ContextVersionRecord, version_id)
+        if existing_version is not None:
+            return False
+
+        ctx = self._session.get(ContextRecord, context_id)
+        if ctx is None:
+            ctx = ContextRecord(
+                context_id=context_id,
+                owner_device=owner_device,
+                label=label,
+            )
+            self._session.add(ctx)
+
+        version = ContextVersionRecord(
+            version_id=version_id,
+            context_id=context_id,
+            version_tag=version_tag,
+            parent_version=parent_version,
+            content=json.dumps(content, sort_keys=True),
+            checksum=checksum,
+            created_at=created_at,
+        )
+        self._session.add(version)
+        self._session.commit()
+        return True
+
     def update_label(self, context_id: str, label: str | None) -> ContextSummary:
         """Update the label on a context WITHOUT creating a new version.
 

@@ -29,20 +29,32 @@ MSG_ACK = "ACK"
 
 @dataclass
 class HelloMessage:
-    """Sent by the initiating device to identify itself."""
+    """Sent by the initiating device to identify itself.
+
+    Carries an ephemeral X25519 public key so the responder can derive the
+    per-session AES-256-GCM key without a second round trip. The Ed25519
+    fields prove identity; the X25519 field establishes the encryption channel.
+    """
     type: str = MSG_HELLO
     device_id: str = ""
     identity_id: str = ""
     signature: str = ""      # hex-encoded Ed25519 signature of challenge
     challenge: str = ""      # hex-encoded random bytes that were signed
+    x25519_public_key: str = ""  # hex-encoded ephemeral X25519 public key (32 bytes)
 
 
 @dataclass
 class KnownVersionsMessage:
-    """Sent by the responder: maps context_id → latest version_tag it has."""
+    """Sent by the responder: maps context_id → latest version_tag it has.
+
+    Also carries the responder's ephemeral X25519 public key, completing the
+    key exchange begun in HELLO. After this message both peers can derive the
+    same session key via X25519 + HKDF.
+    """
     type: str = MSG_KNOWN_VERSIONS
     versions: dict[str, str] = field(default_factory=dict)
     # versions = {"<context_id>": "<version_tag>", ...}
+    x25519_public_key: str = ""  # hex-encoded ephemeral X25519 public key (32 bytes)
 
 
 @dataclass

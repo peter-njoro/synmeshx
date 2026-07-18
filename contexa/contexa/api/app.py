@@ -36,7 +36,27 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         if not hasattr(app.state, "start_time"):
             app.state.start_time = time.time()
-        yield
+
+        # Start the background sync loop if the daemon wired a sync engine.
+        # (TestClient usage without a daemon leaves sync_engine unset — skip.)
+        sync_task = None
+        if getattr(app.state, "sync_engine", None) is not None:
+            import asyncio
+
+            from contexa.sync.loop import run_sync_loop
+
+            app.state.sync_trigger = asyncio.Event()
+            sync_task = asyncio.create_task(run_sync_loop(app))
+
+        try:
+            yield
+        finally:
+            if sync_task is not None:
+                sync_task.cancel()
+                try:
+                    await sync_task
+                except (asyncio.CancelledError, Exception):
+                    pass
 
     app = FastAPI(
         title="Contexa Local API",

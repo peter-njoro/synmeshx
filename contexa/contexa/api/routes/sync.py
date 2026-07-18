@@ -75,8 +75,16 @@ def get_sync_log(
 
 
 @router.post("/sync/trigger", status_code=202)
-def trigger_sync(request: Request):
-    """Trigger a manual sync cycle. Returns 202 Accepted immediately."""
-    # The actual sync runs asynchronously in the daemon's sync loop.
-    # For now, return accepted — the daemon will pick it up on next cycle.
-    return {"status": "accepted", "message": "Sync cycle queued"}
+async def trigger_sync(request: Request):
+    """Trigger a manual sync cycle. Returns 202 Accepted immediately.
+
+    Sets the daemon sync loop's trigger event so it runs a cycle now instead of
+    waiting for the next interval. If no sync loop is running (e.g. local-only
+    mode or an unauthenticated device), reports that sync is unavailable.
+    """
+    trigger = getattr(request.app.state, "sync_trigger", None)
+    if trigger is None:
+        return {"status": "unavailable", "message": "Sync loop is not running"}
+
+    trigger.set()
+    return {"status": "accepted", "message": "Sync cycle triggered"}

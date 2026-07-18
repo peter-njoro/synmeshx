@@ -50,8 +50,14 @@ from contexa.sync.protocol import (
     PushMessage,
     AckMessage,
     detect_conflict,
+    is_ancestor,
     serialize,
     deserialize,
+)
+
+from cryptography.hazmat.primitives.asymmetric.x25519 import (
+    X25519PrivateKey,
+    X25519PublicKey,
 )
 
 logger = logging.getLogger(__name__)
@@ -283,6 +289,231 @@ class SyncEngine:
 
         self.syncs_completed += 1
         return result
+
+    # Network sync primitives (driven by RelaySyncTransport)
+    #
+    # These three methods split sync_with_peer() into the pieces the wire
+    # protocol needs: what versions we hold (KNOWN_VERSIONS), an *encrypted*
+    # push to send (PUSH), and applying an incoming encrypted push (ACK). They
+    # use the real X25519 + AES-256-GCM primitives — no plaintext shortcut.
+
+    def local_known_versions(self) -> dict[str, str]:
+        """Return {context_id: latest_version_tag} for every local context.
+
+        This is the payload of the KNOWN_VERSIONS message — it tells the peer
+        what we already have so it only pushes what we're missing or behind on.
+        """
+        return {
+            s.context_id: s.latest_version_tag
+            for s in self._context_store.list_all()
+        }
+
+    def build_push(
+        self,
+        peer_contexts: dict[str, str],
+        peer_x25519_pub: X25519PublicKey,
+        local_x25519_priv: X25519PrivateKey,
+    ) -> PushMessage:
+        """Build an *encrypted* PUSH of everything the peer is missing/behind on.
+
+        Each entry's content is sealed with AES-256-GCM under a session key
+        derived from our ephemeral X25519 private key and the peer's ephemeral
+        X25519 public key. A fresh nonce per entry doubles as the HKDF salt, so
+        the relay — which never sees either private key — cannot decrypt it.
+
+        Args:
+            peer_contexts: {context_id: version_tag} the peer already has.
+            peer_x25519_pub: The peer's ephemeral X25519 public key.
+            local_x25519_priv: Our ephemeral X25519 private key for this session.
+
+        Returns:
+            A PushMessage whose entries carry ciphertext (never plaintext).
+        """
+        to_push: list[str] = []
+        for summary in self._context_store.list_all():
+            peer_tag = peer_contexts.get(summary.context_id)
+            if peer_tag is None or peer_tag != summary.latest_version_tag:
+                to_push.append(summary.context_id)
+
+        aad = self._identity.device_id.encode()
+        entries: list[PushEntry] = []
+        for context_id in to_push:
+            try:
+                version = self._context_store.get(context_id)
+            except Exception as e:
+                logger.error("Failed to prepare push for context %s: %s", context_id, e)
+                continue
+
+            content_bytes = json.dumps(version.content, sort_keys=True).encode()
+            nonce = generate_nonce()
+            session_key = derive_session_key(
+                local_x25519_priv, peer_x25519_pub, nonce, self._identity.device_id
+            )
+            ciphertext = encrypt(session_key, nonce, content_bytes, aad)
+
+            entries.append(PushEntry(
+                version_id=version.version_id,
+                context_id=version.context_id,
+                version_tag=version.version_tag,
+                parent_version=version.parent_version,
+                content_encrypted=ciphertext.hex(),
+                checksum=version.checksum,
+                created_at=version.created_at.isoformat(),
+                label=version.label,
+                nonce=nonce.hex(),
+            ))
+
+        return PushMessage(entries=entries)
+
+    def apply_push(
+        self,
+        push: PushMessage,
+        peer_x25519_pub: X25519PublicKey,
+        local_x25519_priv: X25519PrivateKey,
+        peer_device_id: str,
+        peer_identity_id: str,
+    ) -> AckMessage:
+        """Decrypt and apply an incoming PUSH, returning an ACK.
+
+        Runs the same trust + identity gate as sync_with_peer(), then for each
+        entry: derives the session key, decrypts, verifies the checksum, and
+        either applies the version (new context or fast-forward) or records a
+        conflict. Every outcome is written to the sync log.
+
+        Args:
+            push: The PushMessage received from the peer.
+            peer_x25519_pub: The peer's ephemeral X25519 public key (from HELLO).
+            local_x25519_priv: Our ephemeral X25519 private key for this session.
+            peer_device_id: The sending device's Device_ID.
+            peer_identity_id: The identity_id the sender claims.
+
+        Returns:
+            An AckMessage listing accepted, conflicting, and rejected version_ids.
+        """
+        ack = AckMessage()
+
+        # Trust + identity gate — refuse the whole push if either fails.
+        if not self._trust_store.is_trusted(peer_device_id):
+            logger.warning("Push rejected: untrusted device %s", peer_device_id)
+            ack.rejected = [e.version_id for e in push.entries]
+            return ack
+
+        from contexa.auth import verify_device_identity
+        if not verify_device_identity(peer_device_id, peer_identity_id, self._session):
+            logger.warning("Push rejected: identity mismatch for device %s", peer_device_id)
+            ack.rejected = [e.version_id for e in push.entries]
+            return ack
+
+        aad = peer_device_id.encode()
+
+        # Pre-index incoming entries so ancestry can be traced across a
+        # multi-version push (e.g. peer sends v2 and v3 while we hold v1).
+        incoming_parents = {e.version_id: e.parent_version for e in push.entries}
+
+        for entry in push.entries:
+            try:
+                nonce = bytes.fromhex(entry.nonce)
+                session_key = derive_session_key(
+                    local_x25519_priv, peer_x25519_pub, nonce, peer_device_id
+                )
+                ciphertext = bytes.fromhex(entry.content_encrypted)
+                plaintext = decrypt(session_key, nonce, ciphertext, aad)
+                content = json.loads(plaintext)
+            except Exception as e:
+                logger.warning("Failed to decrypt push entry %s: %s", entry.version_id, e)
+                ack.rejected.append(entry.version_id)
+                _write_sync_log(
+                    self._session, peer_device_id, entry.context_id,
+                    entry.version_tag, "failed", f"decrypt/parse failed: {e}",
+                )
+                continue
+
+            try:
+                applied = self._apply_entry(entry, content, incoming_parents, peer_device_id)
+            except Exception as e:
+                logger.error("Failed to apply push entry %s: %s", entry.version_id, e)
+                ack.rejected.append(entry.version_id)
+                _write_sync_log(
+                    self._session, peer_device_id, entry.context_id,
+                    entry.version_tag, "failed", str(e),
+                )
+                continue
+
+            if applied == "conflict":
+                ack.conflicts.append(entry.version_id)
+                _write_sync_log(
+                    self._session, peer_device_id, entry.context_id,
+                    entry.version_tag, "conflict",
+                    f"Conflict on context {entry.context_id}",
+                )
+            else:
+                ack.accepted.append(entry.version_id)
+                _write_sync_log(
+                    self._session, peer_device_id, entry.context_id,
+                    entry.version_tag, "success",
+                )
+
+        self.syncs_completed += 1
+        return ack
+
+    def _apply_entry(
+        self,
+        entry: PushEntry,
+        content: dict,
+        incoming_parents: dict[str, str | None],
+        peer_device_id: str,
+    ) -> str:
+        """Apply one decrypted push entry. Returns 'accepted' or 'conflict'."""
+        created_at = datetime.fromisoformat(entry.created_at)
+
+        local_summaries = {s.context_id: s for s in self._context_store.list_all()}
+
+        # New context we've never seen — accept unconditionally.
+        if entry.context_id not in local_summaries:
+            self._context_store.apply_remote_version(
+                version_id=entry.version_id,
+                context_id=entry.context_id,
+                version_tag=entry.version_tag,
+                parent_version=entry.parent_version,
+                content=content,
+                checksum=entry.checksum,
+                created_at=created_at,
+                owner_device=peer_device_id,
+                label=entry.label,
+            )
+            return "accepted"
+
+        local_latest = self._context_store.get(entry.context_id)
+
+        # Idempotent: we already hold this exact version.
+        if local_latest.version_id == entry.version_id:
+            return "accepted"
+
+        # Build the ancestry map from our stored versions plus the whole push.
+        version_map = self._build_version_map(entry.context_id)
+        version_map.update(incoming_parents)
+
+        # Remote is an ancestor of what we already have → we're newer, no-op.
+        if is_ancestor(entry.version_id, local_latest.version_id, version_map):
+            return "accepted"
+
+        # Our latest is an ancestor of remote → clean fast-forward, apply it.
+        if is_ancestor(local_latest.version_id, entry.version_id, version_map):
+            self._context_store.apply_remote_version(
+                version_id=entry.version_id,
+                context_id=entry.context_id,
+                version_tag=entry.version_tag,
+                parent_version=entry.parent_version,
+                content=content,
+                checksum=entry.checksum,
+                created_at=created_at,
+                owner_device=peer_device_id,
+                label=entry.label,
+            )
+            return "accepted"
+
+        # Divergent history — neither is an ancestor of the other.
+        return "conflict"
 
     def queue_pending(self, context_id: str, version_tag: str, peer_device_id: str) -> None:
         """Queue a sync operation for retry when connectivity is restored."""
